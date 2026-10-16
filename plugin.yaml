@@ -1,0 +1,17 @@
+name: model-roles
+label: Model Roles & Anti-Drift
+version: 1.0.0
+kind: extension
+author: "Jose Jimenez"
+homepage: "https://github.com/josejim/hermes-model-roles"
+description: >
+  Eliminates hardcoded model IDs in skills and agent configurations.
+  Provides a single source of truth (model-roles.json), automated sync
+  with atomic rollback, and an anti-drift scanner for the skill library.
+requires_hermes: ">=0.20.0"
+python_dependencies:
+  - pyyaml>=6.0
+provides_commands:
+  - roles
+provides_hooks: []
+skills_dir: skills

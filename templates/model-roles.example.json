@@ -1,0 +1,38 @@
+{
+  "version": 2,
+  "updated": "2026-10-15",
+  "roles": {
+    "main": {
+      "provider": "commandcode",
+      "model": "deepseek/deepseek-v4.1-flash-fast"
+    },
+    "main_fallbacks": [
+      {
+        "provider": "nous",
+        "model": "upstage/solar-pro4:free"
+      },
+      {
+        "provider": "nous",
+        "model": "inclusionai/ling-3.0-flash-fin:free"
+      }
+    ],
+    "worker": {
+      "provider": "commandcode",
+      "model": "deepseek/deepseek-v4.1-flash-fast"
+    },
+    "worker_fallbacks": [
+      {
+        "provider": "nous",
+        "model": "upstage/solar-pro4:free"
+      },
+      {
+        "provider": "nous",
+        "model": "inclusionai/ling-3.0-flash-fin:free"
+      }
+    ],
+    "vision": {
+      "provider": "commandcode",
+      "model": "deepseek/deepseek-v4-flash-vision-exp"
+    }
+  }
+}

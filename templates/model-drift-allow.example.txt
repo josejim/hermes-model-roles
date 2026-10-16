@@ -1,0 +1,10 @@
+# Documentation of external tools or historical examples — reason per file:
+claude-code-proxy-setup/SKILL.md            # external proxy environment configuration example
+autonomous-ai-agents/claude-code/SKILL.md   # external Claude Code CLI catalog reference
+autonomous-ai-agents/opencode/SKILL.md      # external OpenCode CLI catalog reference
+cursor-agent-executor/SKILL.md              # Cursor-specific model catalog documentation
+autonomous-ai-agents/hermes-custom-provider/SKILL.md  # generic model provider tutorial
+devops/omniroute-ops/SKILL.md               # historical incident report example
+devops/hermes-moa-operations/SKILL.md       # pitfall example in MoA documentation
+devops/hermes-model-catalog/SKILL.md        # historical release notes
+openclaw-imports/amazon-bedrock/SKILL.md    # standard AWS Bedrock SDK documentation
