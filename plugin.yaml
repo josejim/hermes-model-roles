@@ -10,7 +10,7 @@ description: >
   with atomic rollback, and an anti-drift scanner for the skill library.
 requires_hermes: ">=0.20.0"
 python_dependencies:
-  - pyyaml>=6.0
+  - pyyaml>=6.0.2
 provides_commands:
   - roles
 provides_hooks: []

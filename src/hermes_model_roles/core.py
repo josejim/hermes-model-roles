@@ -2,6 +2,7 @@
 """Centralized model roles and configuration sync for Hermes Agent."""
 import json
 import os
+import shlex
 import shutil
 import subprocess
 import sys
@@ -20,7 +21,8 @@ def get_cfg_file():
 def hermes(*args):
     env = os.environ.copy()
     env["HERMES_HOME"] = get_home()
-    return subprocess.run(["hermes", *args], capture_output=True, text=True, timeout=60, env=env)
+    timeout = int(os.environ.get("HERMES_CMD_TIMEOUT", "60"))
+    return subprocess.run(["hermes", *args], capture_output=True, text=True, timeout=timeout, env=env)
 
 def load_roles():
     path = get_roles_file()
@@ -43,8 +45,10 @@ def get_aux_sections():
             aux = cfg.get("auxiliary", {})
             if isinstance(aux, dict):
                 return [k for k in aux.keys() if k != "vision"]
-        except Exception:
-            pass
+        except yaml.YAMLError as exc:
+            print(f"Warning: could not parse {cfg_path} ({exc}); falling back to CLI discovery.", file=sys.stderr)
+        except OSError as exc:
+            print(f"Warning: could not read {cfg_path} ({exc}); falling back to CLI discovery.", file=sys.stderr)
     r = hermes("config", "get", "auxiliary")
     return [ln.strip().rstrip(":") for ln in r.stdout.splitlines()
             if ln and not ln[0].isspace() and ln.rstrip().endswith(":") and ln.strip().rstrip(":") != "vision"]
@@ -118,7 +122,7 @@ def apply_roles(dry=False, only=None):
 
     applied = []
     for k, v in want.items():
-        cmd_str = f"hermes config set {k} {v}"
+        cmd_str = f"hermes config set {shlex.quote(k)} {shlex.quote(str(v))}"
         print(("DRY: " if dry else "RUN: ") + cmd_str)
         if not dry:
             r = hermes("config", "set", k, str(v))

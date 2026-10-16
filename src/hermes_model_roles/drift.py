@@ -5,9 +5,13 @@ import os
 import re
 import sys
 
-DEFAULT_ROOTS = [os.path.expanduser("~/.hermes/skills")] + _glob.glob(
-    os.path.expanduser("~/.hermes/profiles/*/skills"))
-ALLOW = os.path.expanduser("~/.hermes/scripts/model-drift-allow.txt")
+def get_default_roots():
+    """Resolve skill roots at call time (import must not touch the host FS)."""
+    return [os.path.expanduser("~/.hermes/skills")] + _glob.glob(
+        os.path.expanduser("~/.hermes/profiles/*/skills"))
+
+def default_allow_path():
+    return os.path.expanduser("~/.hermes/scripts/model-drift-allow.txt")
 
 PROV = r"(?:commandcode|nous|openrouter|openai-codex|omniroute|kiro-cli|deepseek|xkiro)"
 KNOWN_FAMILIES = r"(?:claude|gpt|deepseek|qwen|solar|mimo|mistral|gemini|step|ling|longcat|nemotron)"
@@ -23,7 +27,8 @@ PATTERNS = [
 DRIFT_OK_RE = re.compile(r"<!--\s*drift-ok:\s*.+?\s*-->", re.I)
 SKIP_TOKENS = ("<id>", "<model>", "<rol.model>", "<provider>", "<rol.provider>", "<job-id>", "provider/model")
 
-def load_allow(allow_path=ALLOW):
+def load_allow(allow_path=None):
+    allow_path = allow_path or default_allow_path()
     if not os.path.exists(allow_path):
         return []
     out = []
@@ -73,8 +78,9 @@ def scan(root, allow, use_allow=True):
                             offenders.append((rel, i, tok))
     return offenders, scanned
 
-def run_scan(roots=None, allow_path=ALLOW, use_allow=True):
-    roots = roots or DEFAULT_ROOTS
+def run_scan(roots=None, allow_path=None, use_allow=True):
+    roots = roots or get_default_roots()
+    default_roots = get_default_roots()
     allow = load_allow(allow_path)
     total, total_scanned = 0, 0
     for root in roots:
@@ -83,9 +89,9 @@ def run_scan(roots=None, allow_path=ALLOW, use_allow=True):
         for rel, i, tok in founders:
             print(f"{root} :: {rel}:{i}: {tok}")
         total += len(founders)
-    if use_allow and roots == DEFAULT_ROOTS:
+    if use_allow and roots == default_roots:
         stale = [a for a in allow if not any(
-            os.path.exists(os.path.join(r, a)) for r in DEFAULT_ROOTS)]
+            os.path.exists(os.path.join(r, a)) for r in default_roots)]
         if stale:
             print("Stale allowlist entries (file no longer exists):", stale)
             sys.exit(2)

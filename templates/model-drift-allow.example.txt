@@ -1,10 +1,18 @@
-# Documentation of external tools or historical examples — reason per file:
-claude-code-proxy-setup/SKILL.md            # external proxy environment configuration example
-autonomous-ai-agents/claude-code/SKILL.md   # external Claude Code CLI catalog reference
-autonomous-ai-agents/opencode/SKILL.md      # external OpenCode CLI catalog reference
-cursor-agent-executor/SKILL.md              # Cursor-specific model catalog documentation
-autonomous-ai-agents/hermes-custom-provider/SKILL.md  # generic model provider tutorial
-devops/omniroute-ops/SKILL.md               # historical incident report example
-devops/hermes-moa-operations/SKILL.md       # pitfall example in MoA documentation
-devops/hermes-model-catalog/SKILL.md        # historical release notes
-openclaw-imports/amazon-bedrock/SKILL.md    # standard AWS Bedrock SDK documentation
+# Allowlist for the anti-drift scanner — one relative path per line.
+#
+# Files listed here are EXEMPT from drift detection. Use it for skill files
+# that legitimately document THIRD-PARTY tooling or historical examples
+# (catalogs you do not control, dated incident reports, vendor SDK docs).
+#
+# Always add a short "# reason" comment so a future reader knows WHY.
+#
+# Paths are relative to a skill root (e.g. ~/.hermes/skills). A directory
+# ending in "/" exempts everything beneath it.
+
+# --- Examples (replace with your own entries) ---
+third-party-vendor/SKILL.md          # vendor SDK documentation, catalog you do not control
+archived-notes/SKILL.md              # dated historical report, not live routing
+integration-recipes/                 # directory of external-tool examples
+
+# Note: entries that no longer resolve to a real file make the scanner
+# exit 2 (fail closed) — remove stale lines instead of leaving them.

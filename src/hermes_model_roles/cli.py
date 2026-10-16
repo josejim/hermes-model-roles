@@ -19,7 +19,10 @@ def main():
         dry = "--dry-run" in args
         only = None
         if "--only" in args:
-            only = args[args.index("--only") + 1]
+            idx = args.index("--only")
+            if idx + 1 >= len(args):
+                sys.exit("Error: --only requires a PREFIX argument (e.g. --only delegation)")
+            only = args[idx + 1]
         apply_roles(dry=dry, only=only)
     elif cmd in ("check", "--check"):
         roles = load_roles()
