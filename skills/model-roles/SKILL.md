@@ -43,9 +43,9 @@ All model assignments live in `~/.hermes/model-roles.json`:
 Skills and scripts that need to know which model to use MUST read from the roles file — never guess or hardcode:
 
 ```bash
-hermes roles get <role>     # e.g. get worker -> "commandcode / deepseek/..."
-# or via python fallback:
-python3 -m hermes_model_roles.cli get <role>
+hermes-model-roles get <role>     # e.g. get worker -> "commandcode / deepseek/..."
+# in-session slash command:
+/roles get <role>
 ```
 
 ## Applying Changes to Hermes Config
@@ -55,10 +55,10 @@ When a model changes:
 2. Apply to Hermes config (manual action — never called from worker skills):
 
 ```bash
-hermes roles apply --dry-run   # preview changes
-hermes roles apply             # creates config.yaml backup first and applies atomically
-hermes roles check             # asserts 0 drift between config and roles
-hermes roles apply --only delegation  # selectively applies a group of keys
+hermes-model-roles apply --dry-run   # preview changes
+hermes-model-roles apply             # creates config.yaml backup first and applies atomically
+hermes-model-roles check             # asserts 0 drift between config and roles
+hermes-model-roles apply --only delegation  # selectively applies a group of keys
 ```
 
 `apply` writes:
@@ -75,8 +75,8 @@ If any key fails during apply, an automatic rollback restores the original `conf
 To prevent model IDs from creeping back into skills:
 
 ```bash
-hermes roles scan             # exits 0 if clean, 1 if offenders, 2 if configuration is broken
-hermes roles scan --no-allow   # scans everything ignoring the allowlist
+hermes-model-roles scan             # exits 0 if clean, 1 if offenders, 2 if configuration is broken
+hermes-model-roles scan --no-allow   # scans everything ignoring the allowlist
 ```
 
 ### Legitimate Historical References

@@ -78,13 +78,13 @@ Customize roles according to your provider and tier:
 
 ```bash
 # Preview what would change without modifying config.yaml
-hermes roles apply --dry-run
+hermes-model-roles apply --dry-run
 
 # Apply changes (creates automatic backup config.yaml.bak-roles-* first)
-hermes roles apply
+hermes-model-roles apply
 
 # Verify zero drift between live config and roles
-hermes roles check
+hermes-model-roles check
 ```
 
 ### 3. Read roles inside Skills
@@ -99,7 +99,7 @@ python3 -m hermes_model_roles.cli get worker
 ### 4. Scan skills for hardcoded IDs
 
 ```bash
-hermes roles scan
+hermes-model-roles scan
 ```
 
 To allow historical notes in skills without triggering the scanner, append an inline marker:
@@ -114,11 +114,11 @@ Historical benchmark <!-- drift-ok: historical record, not routing -->: model X 
 
 | Command | Action |
 |---|---|
-| `hermes roles get <role>` | Read provider/model for a role (read-only runtime contract) |
-| `hermes roles apply` | Sync `model-roles.json` to `config.yaml` with rollback protection |
-| `hermes roles apply --only <prefix>` | Selectively sync specific configuration subsets |
-| `hermes roles check` | Assert zero drift between config and roles (exit 0/1) |
-| `hermes roles scan` | Audit skill library against unpinned model IDs |
+| `hermes-model-roles get <role>` | Read provider/model for a role (read-only runtime contract) |
+| `hermes-model-roles apply` | Sync `model-roles.json` to `config.yaml` with rollback protection |
+| `hermes-model-roles apply --only <prefix>` | Selectively sync specific configuration subsets |
+| `hermes-model-roles check` | Assert zero drift between config and roles (exit 0/1) |
+| `hermes-model-roles scan` | Audit skill library against unpinned model IDs |
 
 In Hermes chat sessions, `/roles` is also available as an interactive command.
 
