@@ -90,6 +90,6 @@ Historical note <!-- drift-ok: historical record, not routing -->: model X exhib
 ## Rules and Pitfalls
 
 - **Skills use `get`, never `apply`**: `apply` rewrites global configuration keys. An automated worker skill calling `apply` creates uncontrolled side-effects across the entire gateway.
-- **Never put API keys in `argv`**: `curl ... -H "Authorization: Bearer <token>"` exposes credentials in process tables (`ps`). Use `curl -K <(printf 'header = "Authorization: Bearer %s"\n' "$KEY")`.
+- **Never put API keys in `argv`**: passing secrets on the command line exposes credentials in process tables (`ps`). Use `curl -K <(printf 'header = "Authorization: Bearer %s"\n' "$KEY")`.
 - **Failsafe guard**: `hermes roles scan` fails closed (exit 2) on missing directories, stale allowlist entries, or zero scanned files.
 - **Exceptions must be declared**: external pipelines (e.g. local scripts with dedicated config files), MoA presets, and per-cron overrides are NOT governed by `model-roles.json`. Each must be documented in its owning skill as an explicit exception.
