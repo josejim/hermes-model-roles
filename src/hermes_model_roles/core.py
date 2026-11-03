@@ -28,13 +28,69 @@ def load_roles():
     path = get_roles_file()
     if not os.path.exists(path):
         sys.exit(f"Roles file not found: {path}. Create it or copy from templates/model-roles.example.json")
+    return load_roles_file(path)["roles"]
+
+
+REQUIRED_ROLES = ("main", "worker", "vision")
+ENDPOINT_KEYS = {"provider", "model", "status"}
+
+
+def load_roles_file(path):
+    """Load and structurally validate a model-roles.json (v3). Returns the full doc."""
     with open(path, encoding="utf-8") as f:
         d = json.load(f)
-    roles = d.get("roles", {})
-    for req in ("main", "main_fallbacks", "worker", "worker_fallbacks", "vision"):
-        if req not in roles:
-            sys.exit(f"Invalid model-roles.json: missing role '{req}'")
-    return roles
+    errors = validate_roles_dict(d)
+    if errors:
+        sys.exit("Invalid model-roles.json:\n" + "\n".join("  - " + e for e in errors))
+    return d
+
+
+def validate_roles_dict(d):
+    """Structural validation without the jsonschema dependency (rpds is broken in
+    this venv). Returns a list of human-readable errors (empty = valid)."""
+    errors = []
+    if not isinstance(d, dict):
+        return ["top-level must be an object"]
+    if d.get("version") != 3:
+        errors.append("version must be 3")
+    roles = d.get("roles")
+    if not isinstance(roles, dict):
+        return errors + ["roles must be an object"]
+    for name in REQUIRED_ROLES:
+        if name not in roles:
+            errors.append(f"missing required role '{name}'")
+    for name, val in roles.items():
+        items = val if isinstance(val, list) else [val]
+        for i, ep in enumerate(items):
+            if not isinstance(ep, dict) or not {"provider", "model"}.issubset(ep):
+                errors.append(f"role '{name}'[{i}] must be an object with provider and model")
+                continue
+            extra = set(ep) - ENDPOINT_KEYS
+            if extra:
+                errors.append(f"role '{name}'[{i}] has unexpected keys: {sorted(extra)}")
+            if "status" in ep and not isinstance(ep.get("status"), str):
+                errors.append(f"role '{name}'[{i}].status must be a string when present")
+            for k in ("provider", "model"):
+                if k in ep and (not isinstance(ep[k], str) or not ep[k].strip()):
+                    errors.append(f"role '{name}'[{i}].{k} must be a non-empty string")
+    return errors
+
+
+def validate_roles_file(path):
+    with open(path, encoding="utf-8") as f:
+        d = json.load(f)
+    return validate_roles_dict(d)
+
+
+def resolve_role(path, name):
+    """Return (provider, model) for a role. Lists resolve to the first entry."""
+    d = load_roles_file(path)
+    roles = d["roles"]
+    if name not in roles:
+        sys.exit(f"Unknown role '{name}'. Available: {sorted(roles)}")
+    val = roles[name]
+    ep = val[0] if isinstance(val, list) else val
+    return ep["provider"], ep["model"]
 
 def get_aux_sections():
     cfg_path = get_cfg_file()
@@ -55,13 +111,15 @@ def get_aux_sections():
 
 def desired_map(roles):
     m, w, v = roles["main"], roles["worker"], roles["vision"]
+    main_fb = roles.get("main_fallbacks") or []
+    worker_fb = roles.get("worker_fallbacks") or []
     out = {
         "model.default": m["model"],
         "model.provider": m["provider"],
-        "fallback_providers": json.dumps(roles["main_fallbacks"]),
+        "fallback_providers": json.dumps(main_fb),
         "delegation.provider": w["provider"],
         "delegation.model": w["model"],
-        "delegation.fallback_providers": json.dumps(roles["worker_fallbacks"]),
+        "delegation.fallback_providers": json.dumps(worker_fb),
         "auxiliary.vision.provider": v["provider"],
         "auxiliary.vision.model": v["model"],
     }
@@ -140,6 +198,8 @@ def get_role_value(rolename):
     if rolename not in roles:
         sys.exit(f"Unknown role '{rolename}'. Available: {sorted(roles.keys())}")
     rol = roles[rolename]
+    if isinstance(rol, list):
+        rol = rol[0]
     if isinstance(rol, dict) and "model" in rol:
         print(f"{rol['provider']} / {rol['model']}")
     else:

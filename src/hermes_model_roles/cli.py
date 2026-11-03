@@ -7,7 +7,7 @@ from .drift import run_scan
 def main():
     args = sys.argv[1:]
     if not args or args[0] in ("-h", "--help", "help"):
-        print("Usage: hermes-model-roles [get <role> | apply [--dry-run] [--only PREFIX] | check | scan [--no-allow]]")
+        print("Usage: hermes-model-roles [get <role> | apply [--dry-run] [--only PREFIX] | check | scan [--no-allow] | validate | apply-target <claude|opencode> [--roles PATH] [--path PATH] | check-target <claude|opencode> [--roles PATH] [--path PATH]]")
         sys.exit(0)
 
     cmd = args[0]
@@ -15,6 +15,30 @@ def main():
         if len(args) < 2:
             sys.exit("Error: role name required. e.g. hermes-model-roles get worker")
         get_role_value(args[1])
+    elif cmd == "validate":
+        from .core import validate_roles_file, get_roles_file
+        path = _flag(args, "--roles") or get_roles_file()
+        errors = validate_roles_file(path)
+        if errors:
+            sys.exit("Invalid model-roles.json:\n" + "\n".join("  - " + e for e in errors))
+        print(f"OK: {path} is valid model-roles v3")
+    elif cmd in ("apply-target", "check-target"):
+        from .targets import apply_target, check_target
+        from .core import get_roles_file
+        if len(args) < 2:
+            sys.exit(f"Error: {cmd} needs a target (claude, opencode)")
+        target = args[1]
+        roles_path = _flag(args, "--roles") or get_roles_file()
+        tpath = _flag(args, "--path")
+        if cmd == "apply-target":
+            apply_target(target, roles_path=roles_path, target_path=tpath)
+            print(f"OK: applied {target} from {roles_path}")
+        else:
+            drift = check_target(target, roles_path=roles_path, target_path=tpath)
+            if drift:
+                print("\n".join(drift))
+                sys.exit(1)
+            print(f"OK: {target} in sync")
     elif cmd == "apply":
         dry = "--dry-run" in args
         only = None
@@ -34,7 +58,16 @@ def main():
         total = run_scan(roots=roots or None, use_allow=use_allow)
         sys.exit(1 if total else 0)
     else:
-        sys.exit(f"Unknown command '{cmd}'. Available: get, apply, check, scan")
+        sys.exit(f"Unknown command '{cmd}'. Available: get, validate, apply, apply-target, check, check-target, scan")
+
+
+def _flag(args, name):
+    if name not in args:
+        return None
+    i = args.index(name)
+    if i + 1 >= len(args):
+        sys.exit(f"Error: {name} requires a value")
+    return args[i + 1]
 
 def handle_slash_command(raw_args: str) -> str:
     """Handler for /roles in Hermes chat sessions."""

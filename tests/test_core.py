@@ -11,7 +11,7 @@ class TestModelRolesCore(unittest.TestCase):
     def setUp(self):
         self.temp_dir = tempfile.mkdtemp()
         roles_data = {
-            "version": 2,
+            "version": 3,
             "roles": {
                 "main": {"provider": "testprov", "model": "test-main-model"},
                 "main_fallbacks": [{"provider": "nous", "model": "free-1"}],
