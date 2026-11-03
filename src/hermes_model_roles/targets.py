@@ -39,6 +39,8 @@ def apply_claude(roles_path, target_path):
     _backup(target_path)
     cfg = _load_json(target_path)
     cfg["model"] = model
+    if isinstance(cfg.get("env"), dict) and "ANTHROPIC_MODEL" in cfg["env"]:
+        cfg["env"]["ANTHROPIC_MODEL"] = model
     _dump_json(target_path, cfg)
     return {"model": model}
 

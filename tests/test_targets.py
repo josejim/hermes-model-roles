@@ -91,6 +91,16 @@ class ClaudeTargetTest(unittest.TestCase):
         drift = check_target("claude", roles_path=self.roles, target_path=self.settings)
         self.assertTrue(any("claude-opus-5-5" in d for d in drift))
 
+    def test_apply_claude_updates_anthropic_model_env(self):
+        with open(self.settings) as f:
+            cfg = json.load(f)
+        cfg.setdefault("env", {})["ANTHROPIC_MODEL"] = "auto/best-coding"
+        with open(self.settings, "w") as f:
+            json.dump(cfg, f)
+        apply_target("claude", roles_path=self.roles, target_path=self.settings)
+        out = json.load(open(self.settings))
+        self.assertEqual(out["env"]["ANTHROPIC_MODEL"], "claude-opus-5-5")
+
     def test_apply_refuses_missing_target(self):
         with self.assertRaises(SystemExit):
             apply_target("claude", roles_path=self.roles, target_path=self.tmp + "/nope.json")
