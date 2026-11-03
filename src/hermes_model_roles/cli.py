@@ -57,7 +57,7 @@ def handle_slash_command(raw_args: str) -> str:
             check_drift(want)
             return "✓ 0 keys with drift. Config is in sync with model-roles.json."
         except SystemExit as e:
-            return "⚠️ Drift detected between config and model-roles.json. Run `hermes roles apply` to fix."
+            return "⚠️ Drift detected between config and model-roles.json. Run `hermes-model-roles apply` to fix."
     elif sub == "scan":
         total = run_scan()
         if total == 0:

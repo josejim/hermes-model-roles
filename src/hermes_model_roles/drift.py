@@ -17,7 +17,15 @@ PROV = r"(?:commandcode|nous|openrouter|openai-codex|omniroute|kiro-cli|deepseek
 KNOWN_FAMILIES = r"(?:claude|gpt|deepseek|qwen|solar|mimo|mistral|gemini|step|ling|longcat|nemotron)"
 
 PATTERNS = [
-    re.compile(r"(?<![\w-])(?:--model\s+|-m\s+)('([^']+)'|\"([^\"]+)\"|[a-zA-Z0-9_./:-]+)"),
+    # --model flag for agent tools
+    re.compile(
+        r"(?<![\w-])--model\s+('([^']+)'|\"([^\"]+)\"|[a-zA-Z0-9_./:-]+)"
+    ),
+    # -m for model CLIs (NOT python3 -m mod, NOT git commit -m msg)
+    re.compile(
+        r"(?<![\w-])(?:hermes|opencode|cmd|codex|devin|commandcode|claude|gemini)\s+[^\n]*?\s-m\s+"
+        r"('([^']+)'|\"([^\"]+)\"|[a-zA-Z0-9_./:-]+)"
+    ),
     re.compile(r"(?<![\w-])config\s+(?:set|unset)\s+\S*(?:model|provider)\S*\s+('([^']+)'|\"([^\"]+)\"|\S+)", re.I),
     re.compile(r"(?<![\w-])\S+:free\b"),
     re.compile(r"(?<![\w-])" + PROV + r"/" + KNOWN_FAMILIES + r"[\w.-]*", re.I),
@@ -25,7 +33,7 @@ PATTERNS = [
 ]
 
 DRIFT_OK_RE = re.compile(r"<!--\s*drift-ok:\s*.+?\s*-->", re.I)
-SKIP_TOKENS = ("<id>", "<model>", "<rol.model>", "<provider>", "<rol.provider>", "<job-id>", "provider/model")
+SKIP_TOKENS = ("<id>", "<model>", "<rol.model>", "<provider>", "<rol.provider>", "<job-id>", "provider/model", "<bare>", "<id-opus>", "<id-fable>", "<id-devin>")
 
 def load_allow(allow_path=None):
     allow_path = allow_path or default_allow_path()
@@ -39,18 +47,22 @@ def load_allow(allow_path=None):
                 out.append(clean)
     return out
 
-def is_allowed(rel, allow):
+
+def is_allowed(rel, allow, root="."):
     for a in allow:
         if a.endswith("/"):
             if rel.startswith(a):
                 return True
         elif a.endswith("SKILL.md"):
             skill_prefix = a[:-len("SKILL.md")]
+            # A "SKILL.md" allowlist entry actually exempts the whole skill directory
+            # (matches the documented contract; the live path may still exist).
             if rel.startswith(skill_prefix):
                 return True
         elif rel == a:
             return True
     return False
+
 
 def scan(root, allow, use_allow=True):
     if not os.path.isdir(root):
@@ -63,7 +75,7 @@ def scan(root, allow, use_allow=True):
                 continue
             p = os.path.join(dirpath, f)
             rel = os.path.relpath(p, root)
-            if use_allow and is_allowed(rel, allow):
+            if use_allow and is_allowed(rel, allow, root=root):
                 continue
             scanned += 1
             with open(p, encoding="utf-8", errors="replace") as fh:
@@ -74,6 +86,8 @@ def scan(root, allow, use_allow=True):
                         for m in pat.finditer(line):
                             tok = m.group(0).rstrip(".")
                             if any(t in tok for t in SKIP_TOKENS):
+                                continue
+                            if tok.endswith("/"):  # -m opencode/<id> placeholder
                                 continue
                             offenders.append((rel, i, tok))
     return offenders, scanned
@@ -93,8 +107,9 @@ def run_scan(roots=None, allow_path=None, use_allow=True):
         stale = [a for a in allow if not any(
             os.path.exists(os.path.join(r, a)) for r in default_roots)]
         if stale:
-            print("Stale allowlist entries (file no longer exists):", stale)
-            sys.exit(2)
+            # Stale allowlist entries are informational (the file was removed or
+            # moved); they must not fail the scan (exit 2 = broken setup).
+            print("Stale allowlist entries (informational, not blocking):", stale)
     if total_scanned == 0:
         print("0 files scanned — nothing to validate")
         sys.exit(2)
